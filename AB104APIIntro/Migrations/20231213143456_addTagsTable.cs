@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using AB104APIIntro.Entities;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 

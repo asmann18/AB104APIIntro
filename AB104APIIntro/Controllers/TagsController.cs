@@ -1,5 +1,7 @@
 ﻿using AB104APIIntro.DAL;
+using AB104APIIntro.DTOs;
 using AB104APIIntro.Entities;
+using AB104APIIntro.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,66 +14,47 @@ namespace AB104APIIntro.Controllers;
 public class TagsController : ControllerBase
 {
 
-    private readonly AppDbContext _context;
+    private readonly ITagService _service;
 
-    public TagsController(AppDbContext context)
+    public TagsController(ITagService service)
     {
-        _context = context;
+        _service = service;
     }
+
+
 
     [HttpGet]
     public async Task<IActionResult> GetAllAsync()
     {
-        var json = JsonConvert.SerializeObject(await _context.Tags.ToListAsync());
 
-        return StatusCode(StatusCodes.Status200OK, json);
+        return StatusCode(StatusCodes.Status200OK, await _service.GetAllAsync());
     }
 
     [HttpGet]
     [Route("{id}")]
     public async Task<IActionResult> GetByIdAsync([FromRoute] int id)
     {
-        var tag = await _context.Tags.FirstOrDefaultAsync(x => x.Id == id);
-        if (tag is null)
-            return StatusCode(StatusCodes.Status404NotFound);
-
-        var json = JsonConvert.SerializeObject(tag);
-        return StatusCode(StatusCodes.Status200OK, json);
+        return StatusCode(StatusCodes.Status200OK, await _service.GetAsync(id));
     }
     [HttpDelete]
     [Route("{id}")]
     public async Task<IActionResult> DeleteByIdAsync([FromRoute] int id)
     {
-
-        var tag = await _context.Tags.FirstOrDefaultAsync(x => x.Id == id);
-        if (tag is null)
-            return StatusCode(StatusCodes.Status404NotFound);
-        _context.Tags.Remove(tag);
-        await _context.SaveChangesAsync();
+        await _service.DeleteAsync(id);
         return StatusCode(StatusCodes.Status204NoContent);
 
     }
     [HttpPut]
-    public async Task<IActionResult> UpdateByIdAsync([FromBody] Tag tag)
+    public async Task<IActionResult> UpdateByIdAsync([FromBody] TagPutDto tagPutDto)
     {
-
-        var existed = await _context.Tags.FirstOrDefaultAsync(x => x.Id == tag.Id);
-        if (existed is null)
-            return StatusCode(StatusCodes.Status404NotFound);
-        existed.Name = tag.Name;
-        await _context.SaveChangesAsync();
+        await _service.UpdateAsync(tagPutDto);
         return StatusCode(StatusCodes.Status204NoContent);
 
     }
     [HttpPost]
-    public async Task<IActionResult> CreateAsync([FromBody] string tagName)
+    public async Task<IActionResult> CreateAsync([FromBody] TagPostDto tagPostDto)
     {
-        Tag tag= new()
-        {
-            Name = tagName
-        };
-        await _context.Tags.AddAsync(tag);
-        await _context.SaveChangesAsync();
+        await _service.CreateAsync(tagPostDto);
         return StatusCode(StatusCodes.Status204NoContent);
     }
 }

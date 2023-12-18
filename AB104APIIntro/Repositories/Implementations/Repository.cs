@@ -1,7 +1,6 @@
 ﻿using AB104APIIntro.DAL;
 using AB104APIIntro.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
 using System.Linq.Expressions;
 
 namespace AB104APIIntro.Repositories.Implementations;
@@ -18,18 +17,19 @@ public class Repository<T> : IRepository<T> where T : class, new()
     public async Task CreateAsync(T entity)
     {
         await _context.Set<T>().AddAsync(entity);
-        await SaveAsync();
     }
 
-    public async Task Delete(T entity)
+    public void Delete(T entity)
     {
         _context.Set<T>().Remove(entity);
-        await SaveAsync();
     }
 
-    public IEnumerable<T> GetAllAsync(params string[] includes)
+    public IQueryable<T> GetAllAsync(bool isTracking = false, params string[] includes)
     {
-        IEnumerable<T> entities = _context.Set<T>();
+        
+        IQueryable<T> entities = _context.Set<T>();
+        if (!isTracking)
+            entities.AsNoTracking();
         return entities;
     }
 
@@ -55,10 +55,9 @@ public class Repository<T> : IRepository<T> where T : class, new()
         return await _context.SaveChangesAsync();
     }
 
-    public async Task Update(T entity)
+    public  void Update(T entity)
     {
         _context.Update(entity);
-        await SaveAsync();
     }
 
     public async Task<T?> GetSingleAsync(Expression<Func<T, bool>> expression, params string[] includes)
@@ -71,4 +70,17 @@ public class Repository<T> : IRepository<T> where T : class, new()
         T? entity = await query.FirstOrDefaultAsync(expression);
         return entity;
     }
+
+    public IQueryable<T> OrderBy(IQueryable<T> query, Expression<Func<T, object>> expression)
+    {
+        IQueryable<T> result=query.OrderBy(expression);
+        return result;
+    }
+
+    public IQueryable<T> Paginate(IQueryable<T> query, int limit, int page=1)
+    {
+        IQueryable < T > result= query.Skip((page - 1) * limit).Take(limit);
+        return result;
+    }
+
 }
